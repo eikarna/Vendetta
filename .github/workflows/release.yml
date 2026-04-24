@@ -1,0 +1,128 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Restore cargo cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt --all --check
+
+      - name: Check compilation
+        run: cargo check --locked
+
+      - name: Run tests
+        run: cargo test --locked
+
+      - name: Run clippy
+        run: cargo clippy --locked --all-targets -- -D warnings
+
+  build:
+    name: Build Release Asset (${{ matrix.label }})
+    needs: verify
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            label: linux-x86_64
+            binary_name: vendetta
+            archive_suffix: x86_64-unknown-linux-gnu.tar.gz
+          - os: windows-latest
+            label: windows-x86_64
+            binary_name: vendetta.exe
+            archive_suffix: x86_64-pc-windows-msvc.zip
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Restore cargo cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build release binary
+        run: cargo build --locked --release
+
+      - name: Package Linux artifact
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          mkdir -p dist/package
+          cp target/release/${{ matrix.binary_name }} dist/package/
+          cp README.md LICENSE CHANGELOG.md dist/package/
+          archive_name="vendetta-${{ github.ref_name }}-${{ matrix.archive_suffix }}"
+          tar -C dist/package -czf "dist/${archive_name}" .
+          rm -rf dist/package
+
+      - name: Package Windows artifact
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $archiveName = "vendetta-${{ github.ref_name }}-${{ matrix.archive_suffix }}"
+          New-Item -ItemType Directory -Force -Path dist/package | Out-Null
+          Copy-Item "target/release/${{ matrix.binary_name }}" "dist/package/"
+          Copy-Item README.md, LICENSE, CHANGELOG.md "dist/package/"
+          Compress-Archive -Path dist/package/* -DestinationPath "dist/$archiveName"
+          Remove-Item -Recurse -Force dist/package
+
+      - name: Upload packaged artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.label }}
+          path: dist/*
+
+  publish:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download packaged artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Generate SHA256 sums
+        shell: bash
+        run: |
+          cd dist
+          sha256sum * > SHA256SUMS.txt
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*
+          generate_release_notes: true

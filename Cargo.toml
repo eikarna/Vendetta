@@ -1,0 +1,36 @@
+[package]
+name = "vendetta"
+version = "0.1.0"
+edition = "2021"
+description = "Encrypted SOCKS5 TCP proxy over TLS plus SSH direct-tcpip"
+license = "Apache-2.0"
+readme = "README.md"
+keywords = ["proxy", "socks5", "tls", "ssh"]
+categories = ["command-line-utilities", "network-programming"]
+
+[dependencies]
+anyhow = "1.0.102"
+argon2 = { version = "0.5.3", features = ["password-hash", "zeroize"] }
+async-trait = "0.1.89"
+bytes = "1.11.1"
+clap = { version = "4.5.60", features = ["derive", "env"] }
+rand_core = { version = "0.6.4", features = ["getrandom"] }
+rustls = "0.23.39"
+rustls-pemfile = "2.2.0"
+rustls-pki-types = "1.14.0"
+rustls-platform-verifier = "0.7.0"
+russh = { version = "0.60.1", features = ["async-trait"] }
+secrecy = { version = "0.10.3", features = ["serde"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+thiserror = "2.0.18"
+tokio = { version = "1.52.1", features = ["macros", "rt-multi-thread", "net", "io-util", "time", "signal", "sync"] }
+tokio-rustls = "0.26.4"
+tokio-util = { version = "0.7.18", features = ["rt"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "fmt", "json"] }
+
+[dev-dependencies]
+rcgen = "0.14.7"
+tempfile = "3.27.0"
+tokio-test = "0.4.5"

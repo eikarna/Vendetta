@@ -1,0 +1,15 @@
+{
+  "listen": "0.0.0.0:443",
+  "tls_cert_path": "certs/server.crt",
+  "tls_key_path": "certs/server.key",
+  "ssh_host_key_path": "keys/ssh_host_ed25519",
+  "users": [
+    {
+      "username": "alice",
+      "password_hash": "$argon2id$v=19$m=19456,t=2,p=1$replace$salt-and-hash"
+    }
+  ],
+  "max_channels_per_session": 128,
+  "connect_timeout_ms": 10000,
+  "relay_buffer_bytes": 16384
+}

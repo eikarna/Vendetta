@@ -1,0 +1,10 @@
+{
+  "local_bind": "127.0.0.1:1080",
+  "server_addr": "proxy.example.com:443",
+  "server_name": "proxy.example.com",
+  "username": "alice",
+  "password": "replace-with-a-real-password",
+  "connect_timeout_ms": 10000,
+  "idle_timeout_secs": 300,
+  "relay_buffer_bytes": 16384
+}
